@@ -12,12 +12,12 @@ class State extends Schema {
   @type("boolean") draw: boolean;
 }
 
-export class TicTacToe extends Room<State> {
+export class TicTacToe extends Room {
+  state = new State();
   maxClients = 2;
   randomMoveTimeout: Delayed;
 
   onCreate () {
-    this.setState(new State());
     this.onMessage("action", (client, message) => this.playerAction(client, message));
   }
 

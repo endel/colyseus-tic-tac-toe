@@ -1,8 +1,8 @@
-local ColyseusClient = require "colyseus.client"
+local ColyseusSDK = require "colyseus.sdk"
 
 -- SERVER VARS
 local server_adress = "localhost"
-local server_port = "3553"
+local server_port = "2567"
 
 --VARS
 local client
@@ -11,9 +11,9 @@ local numPlayers = 0
 local gui_controller = msg.url("game", hash("/gui"), "game")
 
 -- Show winner or loser on GUI
-local function showWinner(sessionId)
+local function showWinner(session_id)
 	room:leave()
-	local result = (room.sessionId == sessionId) and true or false
+	local result = (room.session_id == session_id) and true or false
 	msg.post(gui_controller, "Winners", {won = result})
 end
 
@@ -25,7 +25,7 @@ end
 
 -- Change the turn on GUI
 local function nextTurnOut(change_value)
-	local result = (change_value == room.sessionId) and 1 or 0
+	local result = (change_value == room.session_id) and 1 or 0
 	msg.post(gui_controller, "ChangeTurn", {turn = result})
 end
 
@@ -36,7 +36,7 @@ end
 
 function init(self)
 	-- Connect to WS
-	client = ColyseusClient.new("ws://" .. server_adress .. ":" .. server_port, false) -- false: not to connect immediately
+	client = ColyseusSDK.Client("ws://" .. server_adress .. ":" .. server_port, false) -- false: not to connect immediately
 
 	-- EVENTS
 	-- Join Room
@@ -50,34 +50,35 @@ function init(self)
 
 		-- assign our roomm instance to global "room" variable
 		room = room_instance
+		callbacks = ColyseusSDK.callbacks(room)
 
 		--Listen to room state changes from the room handler.
 		--Use this method to synchronize the room state from the server with the clients.
-		room.state.players:on_add(function(player, sessionId)
+		callbacks:on_add("players", function(player, session_id)
 			numPlayers = numPlayers + 1
 			if numPlayers == 2 then
 				onJoin()
-				nextTurnOut(sessionId) -- Called second time here
+				nextTurnOut(session_id) -- Called second time here
 			end
 		end)
 
-		room.state.players:on_remove(function(player, sessionId)
+		callbacks:on_remove("players", function(player, session_id)
 			numPlayers = numPlayers - 1
 		end)
 
-		room.state:on_change(function(changes)
-			for i, change in ipairs(changes) do
-				if change.field == "currentTurn" then
-					nextTurnOut(change.value)
-				elseif change.field == "draw" then
-					drawGame()
-				elseif change.field == "winner" then
-					showWinner(change.value)
-				end
-			end
+		callbacks:listen("currentTurn", function(value)
+			nextTurnOut(value)
 		end)
 
-		room.state.board:on_change(function(value, index)
+		callbacks:listen("draw", function()
+			drawGame()
+		end)
+
+		callbacks:listen("winner", function(winnerSessionId)
+			showWinner(winnerSessionId)
+		end)
+
+		callbacks:on_change("board", function(value, index)
 			local i = index - 1
 			local x = i % 3
 			local y = math.floor(i / 3)

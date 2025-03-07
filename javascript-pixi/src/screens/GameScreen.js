@@ -6,16 +6,17 @@ import EndGameScreen from './EndGameScreen'
 
 import Board from '../components/Board'
 
+import { Client, getStateCallbacks } from 'colyseus.js'
+
+// define endpoint based on environment
+const colyseusSDK = new Client("http://localhost:2567");
+
 export default class GameScreen extends PIXI.Container {
 
   constructor () {
     super()
 
-    let text = (colyseus.readyState === WebSocket.CLOSED)
-      ? "Couldn't connect."
-      : "Waiting for an opponent..."
-
-    this.waitingText = new PIXI.Text(text, {
+    this.waitingText = new PIXI.Text("Waiting for an opponent...", {
       font: "100px JennaSue",
       fill: '#000',
       textAlign: 'center'
@@ -33,10 +34,12 @@ export default class GameScreen extends PIXI.Container {
   }
 
   async connect () {
-    this.room = await colyseus.joinOrCreate('tictactoe');
+    this.room = await colyseusSDK.joinOrCreate('tictactoe');
+
+    const $ = getStateCallbacks(this.room);
 
     let numPlayers = 0;
-    this.room.state.players.onAdd(() => {
+    $(this.room.state).players.onAdd(() => {
       numPlayers++;
 
       if (numPlayers === 2) {
@@ -44,21 +47,21 @@ export default class GameScreen extends PIXI.Container {
       }
     });
 
-    this.room.state.board.onChange((value, index) => {
+    $(this.room.state).board.onChange((value, index) => {
       const x = index % 3;
       const y = Math.floor(index / 3);
       this.board.set(x, y, value);
     })
 
-    this.room.state.listen("currentTurn", (sessionId) => {
+    $(this.room.state).listen("currentTurn", (sessionId) => {
       // go to next turn after a little delay, to ensure "onJoin" gets called before this.
       setTimeout(() => this.nextTurn(sessionId), 10);
     });
 
-    this.room.state.listen("draw", () => this.drawGame());
-    this.room.state.listen("winner", (sessionId) => this.showWinner(sessionId));
+    $(this.room.state).listen("draw", () => this.drawGame());
+    $(this.room.state).listen("winner", (sessionId) => this.showWinner(sessionId));
 
-    this.room.state.onChange((changes) => {
+    $(this.room.state).onChange((changes) => {
       console.log("state.onChange =>", changes);
     });
 
