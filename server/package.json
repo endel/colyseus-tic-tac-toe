@@ -4,13 +4,14 @@
   "description": "Colyseus Server - Minimal example",
   "main": "index.js",
   "scripts": {
-    "start": "tsx ./index.ts"
+    "start": "tsx src/index.ts"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@colyseus/monitor": "^0.16.6",
     "@colyseus/playground": "^0.16.3",
+    "@colyseus/tools": "^0.16.13",
     "@colyseus/ws-transport": "^0.16.0",
     "colyseus": "^0.16.0",
     "cors": "^2.8.5",

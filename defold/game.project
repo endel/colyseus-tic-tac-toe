@@ -11,7 +11,7 @@ height = 640
 
 [project]
 title = tic-tac-toe
-version = 0.15
+version = 0.16
 dependencies#0 = https://github.com/colyseus/colyseus-defold/archive/0.16.zip
 dependencies#1 = https://github.com/defold/extension-websocket/archive/master.zip
 dependencies#2 = https://github.com/britzl/defold-orthographic/archive/3.3.2.zip

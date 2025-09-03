@@ -5,7 +5,7 @@ local server_adress = "localhost"
 local server_port = "2567"
 
 --VARS
-local client
+local sdk
 local room
 local numPlayers = 0
 local gui_controller = msg.url("game", hash("/gui"), "game")
@@ -35,12 +35,12 @@ local function onJoin()
 end
 
 function init(self)
-	-- Connect to WS
-	client = ColyseusSDK.Client("ws://" .. server_adress .. ":" .. server_port, false) -- false: not to connect immediately
+	-- Create Colyseus SDK instance
+	sdk = ColyseusSDK.Client("ws://" .. server_adress .. ":" .. server_port)
 
 	-- EVENTS
 	-- Join Room
-	client:join_or_create("tictactoe", {}, function(err, room_instance)
+	sdk:join_or_create("tictactoe", {}, function(err, room_instance)
 		if err then
 			print("ERROR JOINING ROOM")
 			pprint(err)
@@ -50,7 +50,8 @@ function init(self)
 
 		-- assign our roomm instance to global "room" variable
 		room = room_instance
-		callbacks = ColyseusSDK.callbacks(room)
+
+		local callbacks = ColyseusSDK.callbacks(room)
 
 		--Listen to room state changes from the room handler.
 		--Use this method to synchronize the room state from the server with the clients.
@@ -96,7 +97,7 @@ function final(self)
 	if room then
 		-- If there is a active connection then clean it up
 		room:leave()
-		client = nil
+		sdk = nil
 		room = nil
 	end
 end
